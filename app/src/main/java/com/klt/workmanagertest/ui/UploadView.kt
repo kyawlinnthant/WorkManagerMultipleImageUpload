@@ -3,25 +3,25 @@ package com.klt.workmanagertest.ui
 import android.Manifest
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.ImageDecoder
 import android.net.Uri
 import android.os.Build
-import android.provider.MediaStore
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
@@ -36,11 +36,6 @@ import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.klt.workmanagertest.data.UploadWorker
 import com.klt.workmanagertest.data.Util
 import kotlinx.coroutines.*
-import java.io.File
-import java.io.FileOutputStream
-import java.io.InputStream
-import java.text.SimpleDateFormat
-import java.util.*
 
 @OptIn(ExperimentalPermissionsApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -70,11 +65,11 @@ fun UploadView() {
 
     //worker
 
-    val inputData : Data = workDataOf(
-       UploadWorker.UPLOAD_URI to paths.toTypedArray()
+    val inputData: Data = workDataOf(
+        UploadWorker.UPLOAD_URI to paths.toTypedArray()
     )
     val uploadRequest = OneTimeWorkRequestBuilder<UploadWorker>()
-//        .setInputData(inputData)
+        .setInputData(inputData)
         .setConstraints(
             Constraints.Builder()
                 .setRequiredNetworkType(
@@ -120,39 +115,63 @@ fun UploadView() {
     }
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-        floatingActionButton = {
-            Button(
-                modifier = Modifier.size(100.dp),
-                onClick = {
-                    if (!permissionsState.allPermissionsGranted) {
-                        return@Button
-                    }
-                    if (photoFiles.isEmpty()) {
-                        Log.d("klt.click.empty","here")
-                        photosLauncher.launch("image/*")
-                    } else {
-                        //todo : send with work manager
-                        Log.d("klt.click.isnot","here")
-                        workManager.beginUniqueWork(
-                            UploadWorker.WORK_NAME,
-                            ExistingWorkPolicy.KEEP,
-                            uploadRequest
-                        ).enqueue()
-                    }
-
-                },
-                enabled = uploadInfo?.state != WorkInfo.State.RUNNING,
-                shape = RoundedCornerShape(32.dp)
-            ) {
-                Text(text = if (photoFiles.isEmpty()) "Add" else "Send")
-            }
-        },
-        floatingActionButtonPosition = FabPosition.Center
     ) {
-        LazyColumn(modifier = Modifier.padding(it)) {
-            items(photos.size) { index ->
-                val currentItem = photos[index]
-                Image(bitmap = currentItem.asImageBitmap(), contentDescription = "description")
+        Column(modifier = Modifier.padding(it)) {
+            LazyColumn(modifier = Modifier.weight(1f)) {
+
+                item {
+                    Text(text = "Total images : ${photos.size}")
+                }
+
+                items(photos.size) { index ->
+                    val currentItem = photos[index]
+                    Image(
+                        bitmap = currentItem.asImageBitmap(),
+                        contentDescription = "description"
+                    )
+                }
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Button(
+                    modifier = Modifier.size(100.dp),
+                    onClick = {
+                        if (!permissionsState.allPermissionsGranted) {
+                            return@Button
+                        }
+                        if (photoFiles.isEmpty()) {
+                            Log.d("klt.click.empty", "here")
+                            photosLauncher.launch("image/*")
+                        } else {
+                            //todo : send with work manager
+                            Log.d("klt.click.isnot", "here")
+                            workManager.beginUniqueWork(
+                                UploadWorker.WORK_NAME,
+                                ExistingWorkPolicy.KEEP,
+                                uploadRequest
+                            ).enqueue()
+                        }
+
+                    },
+                    enabled = uploadInfo?.state != WorkInfo.State.RUNNING,
+                    shape = RoundedCornerShape(32.dp)
+                ) {
+                    Text(text = if (photoFiles.isEmpty()) "Add" else "Send")
+                }
+                Spacer(modifier = Modifier.width(50.dp))
+                Button(
+                    modifier = Modifier.size(100.dp),
+                    onClick = {
+                        vm.upload()
+                    },
+                    enabled = uploadInfo?.state != WorkInfo.State.RUNNING,
+                    shape = RoundedCornerShape(32.dp)
+                ) {
+                    Text(text = "Upload")
+                }
             }
 
         }

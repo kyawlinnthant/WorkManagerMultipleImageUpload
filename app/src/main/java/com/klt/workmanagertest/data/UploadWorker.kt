@@ -1,6 +1,7 @@
 package com.klt.workmanagertest.data
 
 import android.content.Context
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.net.toUri
 import androidx.hilt.work.HiltWorker
@@ -12,6 +13,7 @@ import com.klt.workmanagertest.ui.App
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.delay
+import javax.inject.Inject
 import kotlin.random.Random
 
 @HiltWorker
@@ -24,6 +26,7 @@ class UploadWorker @AssistedInject constructor(
     params = workerParams
 ) {
 
+
     private var photos: Int = 0
 
     companion object {
@@ -33,34 +36,41 @@ class UploadWorker @AssistedInject constructor(
 
     override suspend fun doWork(): Result {
 
+        val paths = inputData.getStringArray(UPLOAD_URI)
+        photos = paths?.size ?: 0
         startForegroundService()
 
-       /* val paths = inputData.getStringArray(UPLOAD_URI)
-
-        photos = paths?.size ?: 0
         val files = Util.getFiles(
             context = context,
             uris = paths?.map { it.toUri() } ?: emptyList()
-        )*/
+        )
         //todo : calculation
-        delay(30000L)
+        delay(5000L)
 
-       /* val response = safeApiCall {
-            api.uploadMultipleImages(files = Util.createMultipartFiles("files[]", files))
+        val response = api.uploadMultipleImages(files = Util.createMultipartFiles("files", files))
+        return if (response.isSuccessful) {
+            Log.d("klt.success","${response.body()}")
+            Result.success()
+        } else {
+            Log.d("klt.fail","${response.body()}")
+            Result.failure()
         }
-        when (response) {
-            is RemoteResource.ErrorEvent -> {
 
-            }
-            is RemoteResource.LoadingEvent -> {
+        /* val response = safeApiCall {
+             api.uploadMultipleImages(files = Util.createMultipartFiles("files[]", files))
+         }
+         when (response) {
+             is RemoteResource.ErrorEvent -> {
 
-            }
-            is RemoteResource.SuccessEvent -> {
+             }
+             is RemoteResource.LoadingEvent -> {
 
-            }
-        }*/
+             }
+             is RemoteResource.SuccessEvent -> {
 
-        return Result.success()
+             }
+         }*/
+
     }
 
     private suspend fun startForegroundService() {
